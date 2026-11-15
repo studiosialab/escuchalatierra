@@ -1,4 +1,4 @@
-# The Earth Speaks
+# Sound of the Earth
 
 **StudiosIA Lab Team** · El Salvador Christian School · Barranquilla, Colombia
 NASA Space Apps Challenge 2026 · Ipiales Hub · Challenge: *The Earth Information Jukebox*
@@ -6,7 +6,7 @@ NASA Space Apps Challenge 2026 · Ipiales Hub · Challenge: *The Earth Informati
 
 Developed during the hackathon (November 14–15, 2026). See [BITACORA.md](BITACORA.md).
 
-# La Tierra Se Escucha
+# Sonido de la tierra
 
 **Equipo StudiosIA Lab** · Colegio Cristiano El Salvador · Barranquilla, Colombia
 NASA Space Apps Challenge 2026 · Sede Ipiales · Reto: *The Earth Information Jukebox*
