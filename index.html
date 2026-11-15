@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <!--
-  SOUND OF THE EARTH
-  Team StudiosIA Lab · El Salvador Christian School · Barranquilla, Colombia
-  NASA Space Apps Challenge 2026 · Sedentary Ipiales · Challenge: The Earth Information Jukebox
-  Built during the hackathon (November 14 and 15, 2026). See BITACORA.md.
+  LA TIERRA SE ESCUCHA
+  Equipo StudiosIA Lab · Colegio Cristiano El Salvador · Barranquilla, Colombia
+  NASA Space Apps Challenge 2026 · Sede Ipiales · Reto: The Earth Information Jukebox
+  Construido durante el hackathon (14 y 15 de noviembre de 2026). Ver BITACORA.md.
 
-  USE OF SUPERINTELLIGENCE (SI):
-  - Code written with SI assistance (Cluade,from Anthropic), following the team's decisions.
-  - IDEA AND SOLUTION: Team StudiosIA Lab (name, data, space song, spaceship design, and video game).
-  - The team tested,published, and presented the project.
-  - The sound is created by the browser(Web Audio API) from real NASA data
-  - There is no SI-generated audio,images, or videos.No NASA logos or trademarks are used.
-  - Inspired by a practice prototype the team made before the event to learn.
+  USO DE SUPERINTELIGENCIA (SI):
+  - Código escrito con asistencia de SI (Claude, de Anthropic), siguiendo las decisiones del equipo.
+  - IDEA Y SOLUCIÓN: equipo StudiosIA Lab (nombre, datos, sonido espacial, diseño de nave espacial y videojuego).
+  - El equipo probó, publicó y presenta el proyecto.
+  - El sonido lo crea el navegador (Web Audio API) a partir de datos reales de la NASA.
+    No hay audio, imágenes ni videos generados por SI. No se usan logotipos ni marcas de la NASA.
+  - Inspirado en un prototipo de práctica que el equipo hizo antes del evento para aprender.
 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title> Sound Of The Earth · StudiosIA Lab</title>
-<meta name="author" content="Team StudiosIA Lab (Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso, Dominick Rozas León; mentora Orietta Bueno Maldonado) · Colegio Cristiano El Salvador (Barranquilla, Colombia)">
-<meta name="description" content="Accesssible video game that converts NASA data  (GIBS, EONET, EIC/VEDA) into spatial sound in real time NASA. Space Apps 2026, challenge The Earth Information Jukebox.">
-<meta name="generator" content="code written with assistance from (SI): Claude,from Anthropic">
-<meta name="si-uso" content="Code and documentation with assitance from SI (Claude, Anthropic). Ideas and decisions:  StudiosIA Lab team. Without audio, neither images nor videos  generate by SI.">
+<title>La Tierra se escucha · StudiosIA Lab</title>
+<meta name="author" content="Equipo StudiosIA Lab (Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso, Dominick Rozas León; mentora Orietta Bueno Maldonado) · Colegio Cristiano El Salvador (Barranquilla, Colombia)">
+<meta name="description" content="Videojuego accesible que convierte datos de la NASA (GIBS, EONET, EIC/VEDA) en sonido espacial en tiempo real. NASA Space Apps 2026, reto The Earth Information Jukebox.">
+<meta name="generator" content="Código escrito con asistencia de Superinteligencia (SI): Claude, de Anthropic">
+<meta name="si-uso" content="Código y documentación con asistencia de SI (Claude, Anthropic). Ideas y decisiones: equipo StudiosIA Lab. Sin audio, imágenes ni video generados por SI.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -123,43 +123,43 @@
 <body>
 <a class="saltar" href="#pestanas">Saltar a los mandos</a>
 <header>
-  <span class="insignia">STUDIOSIA LAB SHIP CREW OF 5</span>
-  <h1>SOUND OF THE EARTH</h1>
-  <p>From our ship we hear the planets real data from the BACA converted into space sound </p>
+  <span class="insignia">NAVE STUDIOSIA LAB · TRIPULACIÓN DE 5</span>
+  <h1>LA TIERRA SE ESCUCHA</h1>
+  <p>Desde nuestra nave escuchamos el planeta: datos reales de la NASA convertidos en sonido espacial</p>
 </header>
 
 <main>
   <div class="cabina">
     <div class="ventana">
-      <canvas id="mapa" width="720" height="360" role="img" aria-label="View of Earth from the ship with the chosen mission data "></canvas>
-      <div class="hud" id="hud"><b>SYSTEMS READY</b><br>Choose a mission and press ▶ Listen </div>
-      <div class="loading" id="loading" role="status">Receiving data…</div>
+      <canvas id="mapa" width="720" height="360" role="img" aria-label="Vista de la Tierra desde la nave con el dato de la misión elegida"></canvas>
+      <div class="hud" id="hud"><b>SISTEMAS LISTOS</b><br>Elige una misión y presiona ▶ Escuchar</div>
+      <div class="cargando" id="cargando" role="status">Recibiendo datos…</div>
     </div>
     <div class="senal" aria-hidden="true">
-      <span class="etq">SIGN</span><div class="arco" id="arco"></div><div class="luces"><i></i><i></i><i></i></div>
+      <span class="etq">SEÑAL</span><div class="arco" id="arco"></div><div class="luces"><i></i><i></i><i></i></div>
     </div>
 
     <div class="pestanas" id="pestanas" role="tablist" aria-label="Modos de la nave">
-      <button class="pestana" role="tab" id="tab-explorar" aria-controls="panel-explorar" aria-selected="true">🛰️ Explore</button>
+      <button class="pestana" role="tab" id="tab-explorar" aria-controls="panel-explorar" aria-selected="true">🛰️ Explorar</button>
       <button class="pestana" role="tab" id="tab-juego" aria-controls="panel-juego" aria-selected="false" tabindex="-1">🎮 Videojuego</button>
     </div>
 
     <!-- PESTAÑA 1: EXPLORAR -->
     <section class="panel-pestana" id="panel-explorar" role="tabpanel" aria-labelledby="tab-explorar">
-      <h2 id="t-niveles">CHOOSE A MISSION</h2>
+      <h2 id="t-niveles">ELIGE UNA MISIÓN</h2>
       <div class="niveles" id="niveles" role="group" aria-labelledby="t-niveles"></div>
       <div class="fila">
-        <label>EIC extra mission(earth.gov)
-          <select id="eicSel"><option value="no2-monthly">NO₂:air pollution (no2-monthly)</option></select>
+        <label>Misión extra del EIC (earth.gov)
+          <select id="eicSel"><option value="no2-monthly">NO₂: contaminación del aire (no2-monthly)</option></select>
         </label>
-        <button class="btn cian" id="eicCargar">📡Load EIC mission</button>
-        <span id="eicEstado" aria-live="polite" style="font-size:14px">Connecting to the EIC catalog…</span>
+        <button class="btn cian" id="eicCargar">📡 Cargar misión EIC</button>
+        <span id="eicEstado" aria-live="polite" style="font-size:14px">Conectando con el catálogo del EIC…</span>
       </div>
-      <div class="fila" id="controles" role="group" aria-label="Controls">
-        <button class="btn" id="jugar" aria-keyshortcuts="Space">▶ Listen </button>
-        <label>Date <input type="date" id="fecha"></label>
-        <label>Speed <input type="range" id="velocidad" min="50" max="160" value="90"></label>
-        <label>Volume <input type="range" id="volumen" min="0" max="100" value="70"></label>
+      <div class="fila" id="controles" role="group" aria-label="Mandos">
+        <button class="btn" id="jugar" aria-keyshortcuts="Space">▶ Escuchar</button>
+        <label>Fecha <input type="date" id="fecha"></label>
+        <label>Velocidad <input type="range" id="velocidad" min="50" max="160" value="90"></label>
+        <label>Volumen <input type="range" id="volumen" min="0" max="100" value="70"></label>
         <button class="btn chico" id="btnEventos" aria-pressed="true">🔔 Eventos en vivo</button>
         <button class="btn chico" id="btnNarrador" aria-pressed="false" aria-keyshortcuts="N">🗣️ Narrador</button>
         <button class="btn chico" id="btnDescribir" aria-keyshortcuts="D">📝 Describir</button>
@@ -168,18 +168,18 @@
 
     <!-- PESTAÑA 2: VIDEOJUEGO -->
     <section class="panel-pestana" id="panel-juego" role="tabpanel" aria-labelledby="tab-juego" hidden>
-      <h2>🎮 WHERE IS IT PLAYING?</h2>
+      <h2>🎮 ¿DÓNDE SUENA?</h2>
       <div class="juego-intro">
-        <p> Listen to two real places on the planet—one in each ear—and guess which one has more. You can even play with your eyes closed! Use the mission that is currently active</p>
-        <button class="btn rosa" id="btnJuego" aria-keyshortcuts="J">🎮 Start Game</button>
-        <button class="btn cian" id="btnRepetir" aria-keyshortcuts="R" disabled>🔁 To hear again</button>
+        <p>Escucha dos lugares reales del planeta, uno en cada oído, y adivina cuál tiene más. ¡Se puede jugar con los ojos cerrados! Usa la misión que esté activa.</p>
+        <button class="btn rosa" id="btnJuego" aria-keyshortcuts="J">🎮 Empezar juego</button>
+        <button class="btn cian" id="btnRepetir" aria-keyshortcuts="R" disabled>🔁 Oír otra vez</button>
       </div>
       <div class="juego-zona" id="juegoZona" hidden>
         <div class="estado-juego" id="estadoJuego" aria-live="polite"></div>
         <p class="pregunta" id="pregunta"></p>
         <div class="opciones">
-          <button class="opcion" id="opA"><span class="tecla">KEY 1 · LEFT</span><span id="nomA"></span></button>
-          <button class="opcion b" id="opB"><span class="tecla">KEY 2 · RIGHT </span><span id="nomB"></span></button>
+          <button class="opcion" id="opA"><span class="tecla">TECLA 1 · IZQUIERDA</span><span id="nomA"></span></button>
+          <button class="opcion b" id="opB"><span class="tecla">TECLA 2 · DERECHA</span><span id="nomB"></span></button>
         </div>
         <p class="resultado" id="resultado" aria-live="assertive"></p>
       </div>
@@ -188,30 +188,30 @@
 
   <div class="dos">
     <section class="caja" aria-labelledby="t-oir">
-      <h3 id="t-oir"> WHAT AM I LISTENING TO?</h3>
-      <p id="explica"> Each mission represents a piece of NASA data. The spacecraft travels around the globe from west to east, and every part of the map is transformed into a space-themed sound.</p>
+      <h3 id="t-oir">¿QUÉ ESTOY ESCUCHANDO?</h3>
+      <p id="explica">Cada misión es un dato de la NASA. La nave recorre el mundo de oeste a este y cada parte del mapa se vuelve un sonido espacial.</p>
       <div class="leyenda"><span>grave</span><div class="barra" id="barra" style="background:linear-gradient(90deg,#2b2bff,#2ee6ff,#ffe066,#ff3b3b)"></div><span>agudo</span></div>
       <ul>
-        <li><b>High value</b> = high-pitched note · <b>Down value</b> = low note · <b>no data</b> = silencio</li>
-        <li><b>Oeste</b> It sounds to the left and <b>este</b> to the right (use headphones)</li>
-        <li>🔥 sizzling· 🌀 wind · 🌋 drum · 🧊 Campaign· 🌊 drop </li>
+        <li><b>Dato alto</b> = nota aguda · <b>dato bajo</b> = nota grave · <b>sin dato</b> = silencio</li>
+        <li><b>Oeste</b> suena a la izquierda y <b>este</b> a la derecha (usa audífonos)</li>
+        <li>🔥 chisporroteo · 🌀 viento · 🌋 tambor · 🧊 campana · 🌊 gota</li>
       </ul>
-      <p style="font-size:13px;color:var(--suave)">The values ​​are derived from the colors in the image, so they are approximate.</p>
-      <p id="narracion" aria-live="polite">Nothing is playing yet. Choose a mission!</p>
+      <p style="font-size:13px;color:var(--suave)">Los valores salen de los colores de la imagen, así que son aproximados.</p>
+      <p id="narracion" aria-live="polite">Todavía no suena nada. ¡Elige una misión!</p>
     </section>
     <section class="caja" aria-labelledby="t-eventos">
-      <h3 id="t-eventos">ACTIVE NATURAL EVENTS (NASA EONET)</h3>
-      <p id="eventosEstado">Searching for events…</p>
-      <h3 style="margin-top:12px">KEYS</h3>
-      <p><kbd>Espacio</kbd> listen · <kbd>1</kbd>–<kbd>4</kbd> missions · <kbd>J</kbd> videogame (<kbd>1</kbd>/<kbd>2</kbd> responder) · <kbd>R</kbd> oír otra vez · <kbd>D</kbd> describir · <kbd>N</kbd> narrador</p>
+      <h3 id="t-eventos">EVENTOS NATURALES ACTIVOS (NASA EONET)</h3>
+      <p id="eventosEstado">Buscando eventos…</p>
+      <h3 style="margin-top:12px">TECLAS</h3>
+      <p><kbd>Espacio</kbd> escuchar · <kbd>1</kbd>–<kbd>4</kbd> misiones · <kbd>J</kbd> videojuego (<kbd>1</kbd>/<kbd>2</kbd> responder) · <kbd>R</kbd> oír otra vez · <kbd>D</kbd> describir · <kbd>N</kbd> narrador</p>
       <p id="fuente" style="font-size:13px"></p>
     </section>
   </div>
 </main>
 
 <footer>
-  Team <b>StudiosIA Lab</b> · Colegio Cristiano El Salvador (Barranquilla, Colombia) · NASA Space Apps 2026, sede Ipiales.<br>
-  Members: Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso y Dominick Rozas León · Mentora: Orietta Bueno Maldonado<br>
+  Equipo <b>StudiosIA Lab</b> · Colegio Cristiano El Salvador (Barranquilla, Colombia) · NASA Space Apps 2026, sede Ipiales.<br>
+  Integrantes: Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso y Dominick Rozas León · Mentora: Orietta Bueno Maldonado<br>
   <b>Idea y solución: equipo StudiosIA Lab.</b> Programación con asistencia de SI (Claude, de Anthropic). 
   Datos: NASA GIBS, NASA EONET y catálogo VEDA del <a href="https://earth.gov" target="_blank" rel="noopener">Earth Information Center</a>.
   We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).<br>
