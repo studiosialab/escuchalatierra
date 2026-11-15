@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<!--
+  LA TIERRA SE ESCUCHA
+  Equipo StudiosIA Lab · Colegio Cristiano El Salvador · Barranquilla, Colombia
+  NASA Space Apps Challenge 2026 · Sede Ipiales · Reto: The Earth Information Jukebox
+  Construido durante el hackathon (14 y 15 de noviembre de 2026). Ver BITACORA.md.
+
+  USO DE SUPERINTELIGENCIA (SI):
+  - Código escrito con asistencia de SI (Claude, de Anthropic), siguiendo las decisiones del equipo.
+  - IDEA Y SOLUCIÓN: equipo StudiosIA Lab (nombre, datos, sonido espacial, diseño de nave espacial y videojuego).
+  - El equipo probó, publicó y presenta el proyecto.
+  - El sonido lo crea el navegador (Web Audio API) a partir de datos reales de la NASA.
+    No hay audio, imágenes ni videos generados por SI. No se usan logotipos ni marcas de la NASA.
+  - Inspirado en un prototipo de práctica que el equipo hizo antes del evento para aprender.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Tierra se escucha · StudiosIA Lab</title>
+<meta name="author" content="Equipo StudiosIA Lab (Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso, Dominick Rozas León; mentora Orietta Bueno Maldonado) · Colegio Cristiano El Salvador (Barranquilla, Colombia)">
+<meta name="description" content="Videojuego accesible que convierte datos de la NASA (GIBS, EONET, EIC/VEDA) en sonido espacial en tiempo real. NASA Space Apps 2026, reto The Earth Information Jukebox.">
+<meta name="generator" content="Código escrito con asistencia de Superinteligencia (SI): Claude, de Anthropic">
+<meta name="si-uso" content="Código y documentación con asistencia de SI (Claude, Anthropic). Ideas y decisiones: equipo StudiosIA Lab. Sin audio, imágenes ni video generados por SI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ============ DISEÑO: CABINA DE NAVE ESPACIAL ============ */
+  :root{--espacio:#030716;--casco:#0d1a33;--casco2:#13264a;--borde:#2b4c7e;--azul:#3fa9ff;--cian:#4ff3ff;--verde:#5dffa8;--naranja:#ffa63d;--rojo:#ff5c6c;--texto:#eaf6ff;--suave:#9fb8d6}
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--texto);font-family:'Nunito',system-ui,sans-serif;min-height:100vh;background-color:var(--espacio);
+    background-image:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 120px 80px,#cfe8ff,transparent),
+      radial-gradient(1.5px 1.5px at 200px 160px,#fff,transparent),radial-gradient(1px 1px at 300px 40px,#9fd4ff,transparent),
+      radial-gradient(1px 1px at 380px 200px,#fff,transparent),radial-gradient(ellipse at 50% -10%,#123a7a 0%,transparent 60%);
+    background-size:400px 240px,400px 240px,400px 240px,400px 240px,400px 240px,100% 100%}
+  a{color:var(--cian)}
+  .saltar{position:absolute;left:-999px}.saltar:focus{left:8px;top:8px;background:#000;padding:8px;z-index:9}
+  header{text-align:center;padding:20px 12px 4px}
+  .insignia{display:inline-block;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:4px;color:var(--cian);border:1px solid var(--borde);border-radius:999px;padding:4px 14px;background:rgba(19,38,74,.6)}
+  h1{font-family:'Orbitron',sans-serif;font-weight:800;font-size:clamp(26px,5vw,52px);margin:10px 0 0;letter-spacing:2px;color:#fff;
+     text-shadow:0 0 12px rgba(79,243,255,.7),0 0 30px rgba(63,169,255,.5)}
+  header p{margin:6px 0 0;color:var(--suave)}
+  main{max-width:1100px;margin:14px auto 26px;padding:0 12px}
+  /* cabina */
+  .cabina{background:linear-gradient(180deg,var(--casco2),var(--casco));border:2px solid var(--borde);border-radius:28px;padding:22px;
+    box-shadow:0 0 0 6px #0a1428,0 20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08)}
+  @media (max-width:760px){.cabina{padding:12px;border-radius:18px}}
+  .ventana{position:relative;border-radius:22px;overflow:hidden;border:3px solid #7fa6d8;background:#000;
+    box-shadow:0 0 0 8px #0a1428,0 0 0 10px var(--borde),0 0 28px rgba(79,243,255,.35)}
+  .ventana::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:20px;
+    background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 35%),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 4px)}
+  canvas#mapa{display:block;width:100%;height:auto;aspect-ratio:2/1}
+  .hud{position:absolute;left:12px;top:12px;background:rgba(3,7,22,.75);border:1px solid var(--cian);border-radius:8px;padding:6px 11px;font-size:14px;max-width:72%;z-index:2}
+  .hud b{font-family:'Orbitron';font-size:12px;letter-spacing:1px;color:var(--cian)}
+  .aviso{color:var(--naranja);font-weight:900}
+  .cargando{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,7,22,.7);font-family:'Orbitron';font-size:17px;letter-spacing:2px;text-align:center;padding:20px;z-index:3}
+  .cargando.si{display:flex}
+  /* señal: barras que se mueven con el sonido */
+  .senal{display:flex;align-items:center;gap:12px;margin:14px 2px 0}
+  .senal .etq{font-family:'Orbitron';font-size:11px;letter-spacing:2px;color:var(--suave)}
+  .arco{display:flex;gap:3px;height:34px;align-items:flex-end;flex:1}
+  .arco span{flex:1;border-radius:2px;background:linear-gradient(0deg,var(--azul),var(--cian));height:10%;transition:height .08s linear;box-shadow:0 0 6px rgba(79,243,255,.5)}
+  .luces{display:flex;gap:6px}.luces i{width:10px;height:10px;border-radius:50%;background:var(--verde);box-shadow:0 0 8px var(--verde)}
+  .luces i:nth-child(2){background:var(--naranja);box-shadow:0 0 8px var(--naranja)}.luces i:nth-child(3){background:var(--rojo);box-shadow:0 0 8px var(--rojo)}
+  /* pestañas */
+  .pestanas{display:flex;gap:8px;margin:18px 0 0;flex-wrap:wrap}
+  .pestana{font-family:'Orbitron';font-weight:600;font-size:14px;letter-spacing:1px;cursor:pointer;border:1px solid var(--borde);border-radius:12px 12px 0 0;
+    padding:12px 22px;background:#0a1428;color:var(--suave)}
+  .pestana[aria-selected="true"]{background:linear-gradient(180deg,#1e4f8f,#163a6b);color:#fff;border-color:var(--cian);box-shadow:0 -2px 14px rgba(79,243,255,.35)}
+  .panel-pestana{background:rgba(3,7,22,.45);border:1px solid var(--borde);border-radius:0 14px 14px 14px;padding:16px}
+  h2{font-family:'Orbitron';font-size:15px;letter-spacing:2px;margin:2px 0 12px;color:var(--cian)}
+  /* misiones */
+  .niveles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .nivel{cursor:pointer;border:1px solid var(--borde);border-left:6px solid var(--c);border-radius:12px;background:linear-gradient(180deg,#132a50,#0d1d3a);
+    color:var(--texto);padding:12px 14px;text-align:left;font:inherit;transition:transform .1s,box-shadow .1s}
+  .nivel:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .nivel[aria-pressed="true"]{border-color:var(--c);box-shadow:0 0 0 2px var(--c),0 0 20px var(--c)}
+  .nivel .num{font-family:'Orbitron';font-size:12px;letter-spacing:2px;color:var(--c);display:block;margin-bottom:4px}
+  .nivel .nom{font-weight:900;font-size:17px;display:block;line-height:1.15}
+  .nivel .sub{font-size:13px;color:var(--suave)}
+  /* controles */
+  .fila{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px}
+  .btn{font-family:'Orbitron';font-weight:600;font-size:14px;letter-spacing:1px;border:1px solid #7ff7d0;border-radius:10px;padding:11px 18px;cursor:pointer;color:#03140d;
+    background:linear-gradient(180deg,#9dffd0,var(--verde));box-shadow:0 0 14px rgba(93,255,168,.45)}
+  .btn:active{transform:translateY(2px)}
+  .btn.chico{font-family:'Nunito';font-weight:800;letter-spacing:0;background:#0a1428;color:var(--texto);border:1px solid var(--borde);box-shadow:none}
+  .btn.chico[aria-pressed="true"]{border-color:var(--cian);box-shadow:0 0 10px rgba(79,243,255,.4);background:#123063}
+  .btn.cian{background:linear-gradient(180deg,#a9f9ff,var(--cian));border-color:#c9fcff;box-shadow:0 0 14px rgba(79,243,255,.45)}
+  .btn.rosa{background:linear-gradient(180deg,#ffd29a,var(--naranja));border-color:#ffe0b8;box-shadow:0 0 14px rgba(255,166,61,.5);color:#2a1300}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  label{font-weight:700;font-size:14px;display:flex;gap:6px;align-items:center}
+  input[type=range]{accent-color:var(--cian);width:120px}
+  input[type=date],select{font:inherit;background:#0a1428;color:var(--texto);border:1px solid var(--borde);border-radius:8px;padding:6px 8px;max-width:100%}
+  :focus-visible{outline:3px solid var(--naranja);outline-offset:2px}
+  .dos{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-top:16px}
+  @media (max-width:780px){.dos{grid-template-columns:1fr}}
+  .caja{background:rgba(13,26,51,.85);border:1px solid var(--borde);border-radius:16px;padding:12px 16px}
+  .caja h3{margin:0 0 6px;font-family:'Orbitron';font-size:13px;letter-spacing:2px;color:var(--cian)}
+  .caja p,.caja li{font-size:15px;line-height:1.45;margin:4px 0}
+  #narracion{font-size:16px;min-height:44px;color:#fff}
+  .leyenda{display:flex;align-items:center;gap:8px;font-size:14px;margin:8px 0}
+  .barra{flex:1;height:12px;border-radius:6px}
+  ul{padding-left:20px;margin:6px 0}
+  /* videojuego */
+  .juego-intro{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .juego-intro p{flex:1;min-width:240px;font-size:16px;margin:0}
+  .juego-zona{margin-top:14px;background:linear-gradient(180deg,#0f2246,#081430);border:1px solid var(--cian);border-radius:16px;padding:16px;box-shadow:0 0 22px rgba(79,243,255,.25)}
+  .estado-juego{font-family:'Orbitron';font-size:13px;letter-spacing:1px;color:var(--verde)}
+  .pregunta{font-size:22px;font-weight:900;margin:8px 0 14px}
+  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .opcion{font:inherit;font-size:19px;font-weight:900;cursor:pointer;border:1px solid #c9fcff;border-radius:14px;padding:18px 12px;color:#021a20;
+    background:linear-gradient(180deg,#a9f9ff,var(--cian));box-shadow:0 0 14px rgba(79,243,255,.35)}
+  .opcion.b{background:linear-gradient(180deg,#ffd29a,var(--naranja));border-color:#ffe0b8;color:#2a1300;box-shadow:0 0 14px rgba(255,166,61,.4)}
+  .opcion:active{transform:translateY(2px)}
+  .opcion .tecla{display:block;font-family:'Orbitron';font-size:11px;letter-spacing:1px;margin-bottom:4px;opacity:.75}
+  .resultado{font-size:17px;min-height:26px;margin-top:12px}
+  .bien{color:var(--verde);font-weight:800}.mal{color:var(--rojo);font-weight:800}
+  kbd{background:#0a1428;border:1px solid var(--borde);border-radius:5px;padding:1px 6px;font-family:inherit}
+  footer{text-align:center;color:var(--suave);font-size:13px;padding:0 12px 30px;line-height:1.6}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<a class="saltar" href="#pestanas">Saltar a los mandos</a>
+<header>
+  <span class="insignia">NAVE STUDIOSIA LAB · TRIPULACIÓN DE 5</span>
+  <h1>LA TIERRA SE ESCUCHA</h1>
+  <p>Desde nuestra nave escuchamos el planeta: datos reales de la NASA convertidos en sonido espacial</p>
+</header>
+
+<main>
+  <div class="cabina">
+    <div class="ventana">
+      <canvas id="mapa" width="720" height="360" role="img" aria-label="Vista de la Tierra desde la nave con el dato de la misión elegida"></canvas>
+      <div class="hud" id="hud"><b>SISTEMAS LISTOS</b><br>Elige una misión y presiona ▶ Escuchar</div>
+      <div class="cargando" id="cargando" role="status">Recibiendo datos…</div>
+    </div>
+    <div class="senal" aria-hidden="true">
+      <span class="etq">SEÑAL</span><div class="arco" id="arco"></div><div class="luces"><i></i><i></i><i></i></div>
+    </div>
+
+    <div class="pestanas" id="pestanas" role="tablist" aria-label="Modos de la nave">
+      <button class="pestana" role="tab" id="tab-explorar" aria-controls="panel-explorar" aria-selected="true">🛰️ Explorar</button>
+      <button class="pestana" role="tab" id="tab-juego" aria-controls="panel-juego" aria-selected="false" tabindex="-1">🎮 Videojuego</button>
+    </div>
+
+    <!-- PESTAÑA 1: EXPLORAR -->
+    <section class="panel-pestana" id="panel-explorar" role="tabpanel" aria-labelledby="tab-explorar">
+      <h2 id="t-niveles">ELIGE UNA MISIÓN</h2>
+      <div class="niveles" id="niveles" role="group" aria-labelledby="t-niveles"></div>
+      <div class="fila">
+        <label>Misión extra del EIC (earth.gov)
+          <select id="eicSel"><option value="no2-monthly">NO₂: contaminación del aire (no2-monthly)</option></select>
+        </label>
+        <button class="btn cian" id="eicCargar">📡 Cargar misión EIC</button>
+        <span id="eicEstado" aria-live="polite" style="font-size:14px">Conectando con el catálogo del EIC…</span>
+      </div>
+      <div class="fila" id="controles" role="group" aria-label="Mandos">
+        <button class="btn" id="jugar" aria-keyshortcuts="Space">▶ Escuchar</button>
+        <label>Fecha <input type="date" id="fecha"></label>
+        <label>Velocidad <input type="range" id="velocidad" min="50" max="160" value="90"></label>
+        <label>Volumen <input type="range" id="volumen" min="0" max="100" value="70"></label>
+        <button class="btn chico" id="btnEventos" aria-pressed="true">🔔 Eventos en vivo</button>
+        <button class="btn chico" id="btnNarrador" aria-pressed="false" aria-keyshortcuts="N">🗣️ Narrador</button>
+        <button class="btn chico" id="btnDescribir" aria-keyshortcuts="D">📝 Describir</button>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: VIDEOJUEGO -->
+    <section class="panel-pestana" id="panel-juego" role="tabpanel" aria-labelledby="tab-juego" hidden>
+      <h2>🎮 ¿DÓNDE SUENA?</h2>
+      <div class="juego-intro">
+        <p>Escucha dos lugares reales del planeta, uno en cada oído, y adivina cuál tiene más. ¡Se puede jugar con los ojos cerrados! Usa la misión que esté activa.</p>
+        <button class="btn rosa" id="btnJuego" aria-keyshortcuts="J">🎮 Empezar juego</button>
+        <button class="btn cian" id="btnRepetir" aria-keyshortcuts="R" disabled>🔁 Oír otra vez</button>
+      </div>
+      <div class="juego-zona" id="juegoZona" hidden>
+        <div class="estado-juego" id="estadoJuego" aria-live="polite"></div>
+        <p class="pregunta" id="pregunta"></p>
+        <div class="opciones">
+          <button class="opcion" id="opA"><span class="tecla">TECLA 1 · IZQUIERDA</span><span id="nomA"></span></button>
+          <button class="opcion b" id="opB"><span class="tecla">TECLA 2 · DERECHA</span><span id="nomB"></span></button>
+        </div>
+        <p class="resultado" id="resultado" aria-live="assertive"></p>
+      </div>
+    </section>
+  </div>
+
+  <div class="dos">
+    <section class="caja" aria-labelledby="t-oir">
+      <h3 id="t-oir">¿QUÉ ESTOY ESCUCHANDO?</h3>
+      <p id="explica">Cada misión es un dato de la NASA. La nave recorre el mundo de oeste a este y cada parte del mapa se vuelve un sonido espacial.</p>
+      <div class="leyenda"><span>grave</span><div class="barra" id="barra" style="background:linear-gradient(90deg,#2b2bff,#2ee6ff,#ffe066,#ff3b3b)"></div><span>agudo</span></div>
+      <ul>
+        <li><b>Dato alto</b> = nota aguda · <b>dato bajo</b> = nota grave · <b>sin dato</b> = silencio</li>
+        <li><b>Oeste</b> suena a la izquierda y <b>este</b> a la derecha (usa audífonos)</li>
+        <li>🔥 chisporroteo · 🌀 viento · 🌋 tambor · 🧊 campana · 🌊 gota</li>
+      </ul>
+      <p style="font-size:13px;color:var(--suave)">Los valores salen de los colores de la imagen, así que son aproximados.</p>
+      <p id="narracion" aria-live="polite">Todavía no suena nada. ¡Elige una misión!</p>
+    </section>
+    <section class="caja" aria-labelledby="t-eventos">
+      <h3 id="t-eventos">EVENTOS NATURALES ACTIVOS (NASA EONET)</h3>
+      <p id="eventosEstado">Buscando eventos…</p>
+      <h3 style="margin-top:12px">TECLAS</h3>
+      <p><kbd>Espacio</kbd> escuchar · <kbd>1</kbd>–<kbd>4</kbd> misiones · <kbd>J</kbd> videojuego (<kbd>1</kbd>/<kbd>2</kbd> responder) · <kbd>R</kbd> oír otra vez · <kbd>D</kbd> describir · <kbd>N</kbd> narrador</p>
+      <p id="fuente" style="font-size:13px"></p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Equipo <b>StudiosIA Lab</b> · Colegio Cristiano El Salvador (Barranquilla, Colombia) · NASA Space Apps 2026, sede Ipiales.<br>
+  Integrantes: Emiliano García González, Derek Manes Contreras, Matías Mancera Crespo, Esteban Gómez Alonso y Dominick Rozas León · Mentora: Orietta Bueno Maldonado<br>
+  <b>Idea y solución: equipo StudiosIA Lab.</b> Programación con asistencia de SI (Claude, de Anthropic). 
+  Datos: NASA GIBS, NASA EONET y catálogo VEDA del <a href="https://earth.gov" target="_blank" rel="noopener">Earth Information Center</a>.
+  We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).<br>
+  No es un producto oficial de la NASA.
+</footer>
+
+<script>
+/* ==========================================================
+   LA TIERRA SE ESCUCHA · código del equipo StudiosIA Lab
+   1. Niveles (datos que eligió el equipo)
+   2. Traer imágenes de la NASA
+   3. Convertir colores en números
+   4. Sonido espacial (Web Audio API)
+   5. Recorrido del mapa
+   6. Eventos en vivo (EONET)
+   7. Nivel extra del EIC (VEDA)
+   8. Minijuego "¿Dónde suena?"
+   9. Accesibilidad: narrador y teclado
+   ========================================================== */
+
+// ---------- 1. MISIONES (los datos que eligió el equipo) ----------
+const NIVELES = [
+  {num:'MISIÓN 1', nombre:'Temperatura del mar', sub:'¿Agua caliente o fría?', color:'#36e6ff',
+   capas:['GHRSST_L4_MUR_Sea_Surface_Temperature'], formato:'image/png', modo:'arcoiris',
+   explica:'Solo suena el océano. Agua caliente = nota aguda; agua fría = nota grave. Los continentes son silencio.',
+   barra:'linear-gradient(90deg,#3b2bff,#36e6ff,#39ff5a,#ffe14d,#ff4d5e)', pregunta:'¿Dónde está el agua MÁS CALIENTE?', palabra:'más caliente', tipoLugar:'mar'},
+  {num:'MISIÓN 2', nombre:'Plantas y bosques', sub:'¿Qué tan verde está?', color:'#39ff5a',
+   capas:['MODIS_Terra_NDVI_8Day','MODIS_Aqua_NDVI_8Day'], formato:'image/png', modo:'verde',
+   explica:'Mide qué tan verde está la tierra. Selvas = nota aguda; desiertos = nota grave. El mar es silencio.',
+   barra:'linear-gradient(90deg,#c9a26b,#e8e07a,#7cc35a,#0b5d1e)', pregunta:'¿Dónde hay MÁS PLANTAS?', palabra:'más verde', tipoLugar:'tierra'},
+  {num:'MISIÓN 3', nombre:'Lluvia', sub:'¿Dónde llueve?', color:'#7fa8ff',
+   capas:['IMERG_Precipitation_Rate'], formato:'image/png', modo:'arcoiris',
+   explica:'Donde llueve suena. Lluvia suave = grave; aguacero = agudo. Sin lluvia = silencio.',
+   barra:'linear-gradient(90deg,#36e6ff,#39ff5a,#ffe14d,#ff4d5e)', pregunta:'¿Dónde está lloviendo MÁS FUERTE?', palabra:'más lluvia', tipoLugar:'todos'},
+  {num:'MISIÓN 4', nombre:'Foto real', sub:'Nubes, desiertos y mar', color:'#ffe14d',
+   capas:['MODIS_Terra_CorrectedReflectance_TrueColor','VIIRS_SNPP_CorrectedReflectance_TrueColor'], formato:'image/jpeg', modo:'brillo',
+   explica:'Foto real del planeta. Nubes y desiertos (claros) = agudo; océano oscuro = grave.',
+   barra:'linear-gradient(90deg,#06122b,#2d5a7b,#c8b48a,#ffffff)', pregunta:'¿Qué lugar se ve MÁS CLARO desde el espacio?', palabra:'más claro', tipoLugar:'todos'}
+];
+const COLS = 48, FRANJAS = 6, W = 720, H = 360;
+const GIBS = 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi';
+const EONET = 'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=30&limit=300';
+const VEDA = 'https://openveda.cloud/api';
+
+const $ = id => document.getElementById(id);
+const ctx = $('mapa').getContext('2d');
+let nivel = null, imgVista = null, pixeles = null, rejilla = null, fechaUsada = '', demo = false;
+let eventos = [], eventosCol = Array.from({length:COLS}, () => []), conEventos = true, narrador = false;
+
+function escapar(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function diaAntes(f){ const d = new Date(f + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); }
+$('fecha').value = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+$('fecha').max = new Date().toISOString().slice(0, 10);
+
+// ---------- 2. TRAER IMÁGENES DE LA NASA ----------
+function urlGIBS(capa, fecha, formato){
+  return GIBS + '?' + new URLSearchParams({SERVICE:'WMS', REQUEST:'GetMap', VERSION:'1.1.1', LAYERS:capa, STYLES:'', SRS:'EPSG:4326',
+    BBOX:'-180,-90,180,90', WIDTH:W, HEIGHT:H, FORMAT:formato, TRANSPARENT:'TRUE', TIME:fecha});
+}
+function cargarImg(url){
+  return new Promise((ok, mal) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => mal(new Error('sin imagen')); i.src = url; });
+}
+function leerPixeles(img){
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0, W, H);
+  return x.getImageData(0, 0, W, H).data;
+}
+// Si una fecha no tiene datos, probamos días anteriores y luego otra capa
+async function buscarNASA(n, fecha){
+  for (const capa of n.capas){
+    let f = fecha;
+    for (let k = 0; k < 6; k++){
+      try{
+        const img = await cargarImg(urlGIBS(capa, f, n.formato));
+        const px = leerPixeles(img), rj = analizar(px, n);
+        if (rj.cobertura > 0.01) return {img, px, rj, fecha:f, capa};
+      }catch(e){ if (e.name === 'SecurityError') throw e; }
+      f = diaAntes(f);
+    }
+  }
+  throw new Error('sin datos');
+}
+
+// ---------- 3. DE COLOR A NÚMERO (0 = bajo, 1 = alto) ----------
+function valorPixel(r, g, b, a, modo){
+  if (a < 40) return null;                                   // transparente = sin dato
+  if (modo === 'gris') return r / 255;                       // niveles del EIC: blanco = alto
+  if (modo === 'brillo'){ const v = (0.3*r + 0.59*g + 0.11*b) / 255; return v < 0.02 ? null : v; }
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (mx < 15) return null;
+  let h = 0;
+  if (d) h = mx === r ? 60 * (((g - b) / d) % 6) : mx === g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4);
+  if (h < 0) h += 360;
+  if (modo === 'verde') return d < 15 ? 0.08 : Math.min(1, Math.max(0, (h - 30) / 90));
+  if (d < 12) return null;                                    // gris = sin dato
+  if (h > 300) h = 0; else if (h > 240) h = 240;              // arcoíris: azul = bajo, rojo = alto
+  return 1 - h / 240;
+}
+function analizar(px, n){
+  const celdas = [], cw = W / COLS, fh = H / FRANJAS; let tot = 0, val = 0;
+  for (let c = 0; c < COLS; c++){
+    const fr = []; let s = 0, k = 0, t = 0;
+    for (let f = 0; f < FRANJAS; f++){
+      let sf = 0, kf = 0, tf = 0;
+      for (let y = Math.floor(f * fh); y < (f + 1) * fh; y += 3)
+        for (let x = Math.floor(c * cw); x < (c + 1) * cw; x += 3){
+          const i = (y * W + x) * 4, v = valorPixel(px[i], px[i+1], px[i+2], px[i+3], n.modo);
+          tf++; if (v !== null){ sf += v; kf++; }
+        }
+      fr.push({v: kf ? sf / kf : 0, cob: kf / tf}); s += sf; k += kf; t += tf;
+    }
+    celdas.push({fr, v: k ? s / k : 0, cob: k / t}); tot += t; val += k;
+  }
+  return {celdas, cobertura: val / tot};
+}
+// Valor en un punto del mapa (latitud, longitud), promediando un cuadrito
+function valorEn(lat, lon){
+  if (!pixeles) return null;
+  const cx = Math.round((lon + 180) / 360 * W), cy = Math.round((90 - lat) / 180 * H);
+  let s = 0, k = 0;
+  for (let y = cy - 3; y <= cy + 3; y++) for (let x = cx - 3; x <= cx + 3; x++){
+    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    const i = (y * W + x) * 4, v = valorPixel(pixeles[i], pixeles[i+1], pixeles[i+2], pixeles[i+3], nivel.modo);
+    if (v !== null){ s += v; k++; }
+  }
+  return k > 10 ? s / k : null;
+}
+function rejillaDemo(){
+  const celdas = [];
+  for (let c = 0; c < COLS; c++){
+    const fr = [];
+    for (let f = 0; f < FRANJAS; f++){ const lat = 1 - Math.abs((f + .5) / FRANJAS * 2 - 1); fr.push({v: Math.max(0, Math.min(1, .6 * lat + .25 * Math.sin(c / 4))), cob: .8}); }
+    celdas.push({fr, v: fr.reduce((a, b) => a + b.v, 0) / FRANJAS, cob: .8});
+  }
+  return {celdas, cobertura: .8};
+}
+
+// ---------- 4. SONIDO ESPACIAL ----------
+let audio = null, salida, eco, analizador;
+const ESCALA = [0, 2, 4, 7, 9];                               // pentatónica: siempre suena afinado
+function frec(i, oct){ return 110 * Math.pow(2, (12 * (Math.floor(i / 5) + oct) + ESCALA[i % 5]) / 12); }
+function iniciarAudio(){
+  if (audio) return;
+  audio = new (window.AudioContext || window.webkitAudioContext)();
+  salida = audio.createGain(); salida.gain.value = $('volumen').value / 100;
+  // eco espacial: una "sala" enorme hecha con ruido que se apaga lentamente
+  eco = audio.createConvolver();
+  const largo = audio.sampleRate * 3.5, imp = audio.createBuffer(2, largo, audio.sampleRate);
+  for (let ch = 0; ch < 2; ch++){ const d = imp.getChannelData(ch); for (let i = 0; i < largo; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / largo, 3); }
+  eco.buffer = imp;
+  const mojado = audio.createGain(); mojado.gain.value = 0.45;
+  const comp = audio.createDynamicsCompressor();
+  analizador = audio.createAnalyser(); analizador.fftSize = 64;
+  salida.connect(comp); salida.connect(eco); eco.connect(mojado); mojado.connect(comp);
+  comp.connect(analizador); analizador.connect(audio.destination);
+}
+// Nota espacial: entra despacio, se mueve entre parlantes y se apaga con eco
+function nota(f, t, dur, vol, pan, onda = 'sine'){
+  const o = audio.createOscillator(), o2 = audio.createOscillator(), g = audio.createGain(), p = audio.createStereoPanner();
+  o.type = onda; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 1.005;   // dos notas casi iguales = brillo espacial
+  p.pan.value = Math.max(-1, Math.min(1, pan));
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.25, dur / 3));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); o2.connect(g); g.connect(p); p.connect(salida);
+  o.start(t); o2.start(t); o.stop(t + dur + .1); o2.stop(t + dur + .1);
+}
+function ruido(t, dur, vol, tipo, f1, f2, pan){
+  const b = audio.createBuffer(1, audio.sampleRate * dur, audio.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const s = audio.createBufferSource(), fl = audio.createBiquadFilter(), g = audio.createGain(), p = audio.createStereoPanner();
+  s.buffer = b; fl.type = tipo; fl.frequency.setValueAtTime(f1, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); p.pan.value = pan || 0;
+  s.connect(fl); fl.connect(g); g.connect(p); p.connect(salida); s.start(t);
+}
+function sonidoEvento(cat, t, pan){
+  if (cat === 'wildfires') for (let k = 0; k < 5; k++) ruido(t + k * .04, .05, .3, 'highpass', 2500, 0, pan);
+  else if (cat === 'severeStorms') ruido(t, 1, .3, 'bandpass', 300, 1800, pan);
+  else if (cat === 'volcanoes'){ const o = audio.createOscillator(), g = audio.createGain(), p = audio.createStereoPanner(); p.pan.value = pan;
+    o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(35, t + .5); g.gain.setValueAtTime(.8, t); g.gain.exponentialRampToValueAtTime(.0001, t + .6);
+    o.connect(g); g.connect(p); p.connect(salida); o.start(t); o.stop(t + .7); }
+  else if (cat === 'seaLakeIce' || cat === 'snow') nota(1760, t, .9, .12, pan);
+  else if (cat === 'floods'){ const o = audio.createOscillator(), g = audio.createGain(), p = audio.createStereoPanner(); p.pan.value = pan;
+    o.frequency.setValueAtTime(400, t); o.frequency.exponentialRampToValueAtTime(1400, t + .12); g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+    o.connect(g); g.connect(p); p.connect(salida); o.start(t); o.stop(t + .25); }
+  else ruido(t, .4, .2, 'lowpass', 900, 0, pan);
+}
+
+// ---------- 5. RECORRIDO DEL MAPA ----------
+let jugando = false, paso = 0, siguiente = 0, reloj = null, columnaVisible = -1;
+const pendientes = [];
+function tocarColumna(c, t, dp){
+  const col = rejilla.celdas[c], pan = (c + .5) / COLS * 2 - 1;      // oeste = izquierda, este = derecha
+  if (c % 4 === 0) ruido(t, .02, .05, 'highpass', 8000, 0, pan);      // pulso suave, como un radar
+  if (col.cob > .04){
+    nota(frec(Math.round(col.v * 12), 1), t, dp * 2.4, .06 + .16 * Math.min(1, col.cob * 1.5), pan, 'triangle');
+  }
+  if (c % 3 === 0){                                                    // fondo grave: el ecuador
+    const ec = [col.fr[2], col.fr[3]].filter(f => f.cob > .05);
+    if (ec.length) nota(frec(Math.round(ec.reduce((a, f) => a + f.v, 0) / ec.length * 4), -1), t, dp * 4, .12, pan * .5, 'sine');
+  }
+  if (conEventos) (eventosCol[c] || []).slice(0, 3).forEach((e, k) => sonidoEvento(e.cat, t + k * dp / 3, pan));
+  pendientes.push({c, t});
+}
+function programador(){
+  const dp = 60 / $('velocidad').value / 2;
+  while (siguiente < audio.currentTime + .12){
+    tocarColumna(paso, siguiente, dp); anunciar(paso);
+    siguiente += dp; paso = (paso + 1) % COLS;
+  }
+}
+function jugar(){
+  iniciarAudio(); audio.resume();
+  if (!rejilla){ $('narracion').textContent = 'Primero elige una misión.'; return; }
+  detenerJuego();
+  jugando = true; siguiente = audio.currentTime + .05; reloj = setInterval(programador, 25);
+  $('jugar').textContent = '⏸ Pausa';
+}
+function pausar(){ jugando = false; clearInterval(reloj); $('jugar').textContent = '▶ Escuchar'; }
+
+async function elegirNivel(i){
+  pausar(); detenerJuego();
+  nivel = NIVELES[i];
+  document.querySelectorAll('.nivel').forEach((b, k) => b.setAttribute('aria-pressed', k === i));
+  await cargarNivel(() => buscarNASA(nivel, $('fecha').value), nivel.num);
+}
+async function cargarNivel(buscar, titulo){
+  $('cargando').textContent = `Recibiendo ${titulo} desde la NASA…`; $('cargando').classList.add('si'); demo = false;
+  try{
+    const r = await buscar();
+    imgVista = r.vista || r.img; pixeles = r.px; rejilla = r.rj; fechaUsada = r.fecha;
+    $('fuente').innerHTML = `Fuente: ${r.fuente || `NASA GIBS, capa <code>${escapar(r.capa)}</code>`}, fecha ${escapar(r.fecha)}.`;
+  }catch(e){
+    imgVista = null; pixeles = null; rejilla = rejillaDemo(); fechaUsada = '—'; demo = true;
+    $('fuente').textContent = `Modo práctica: datos inventados porque no se pudieron recibir los datos (${e.message || 'sin conexión'}).`;
+    if (nivel && nivel.num === 'MISIÓN EIC') $('eicEstado').innerHTML = `<span class="aviso">No se pudo cargar esta misión del EIC (${escapar(e.message || 'sin conexión')}). Prueben otra.</span>`;
+  }
+  $('cargando').classList.remove('si');
+  $('hud').innerHTML = demo ? `<b>${escapar(nivel.num)} · ${escapar(nivel.nombre)}</b><br><span class="aviso">Modo práctica (sin conexión)</span>`
+                            : `<b>${escapar(nivel.num)} · ${escapar(nivel.nombre)}</b><br>Fecha de la imagen: ${escapar(fechaUsada)}`;
+  $('explica').textContent = nivel.explica; $('barra').style.background = nivel.barra;
+  hablar(`${nivel.num}. ${nivel.nombre}. ${nivel.explica}`);
+  dibujar();
+}
+
+// ---------- 6. EVENTOS EN VIVO (NASA EONET) ----------
+const TIPOS = {wildfires:['🔥','Incendio'], severeStorms:['🌀','Tormenta fuerte'], volcanoes:['🌋','Volcán'], seaLakeIce:['🧊','Hielo marino'],
+  floods:['🌊','Inundación'], dustHaze:['🌫️','Polvo o humo'], snow:['❄️','Nevada'], drought:['🏜️','Sequía'], earthquakes:['〰️','Sismo']};
+async function cargarEventos(){
+  try{
+    const j = await (await fetch(EONET)).json();
+    eventos = j.events.map(e => {
+      const g = e.geometry[e.geometry.length - 1]; let co = g.coordinates;
+      while (Array.isArray(co[0])) co = co[0];
+      const cat = e.categories[0].id, t = TIPOS[cat] || ['📍', e.categories[0].title];
+      return {titulo:e.title, cat, lon:co[0], lat:co[1], ico:t[0], nom:t[1]};
+    }).filter(e => isFinite(e.lon) && isFinite(e.lat));
+    eventosCol = Array.from({length:COLS}, () => []);
+    eventos.forEach(e => eventosCol[Math.min(COLS - 1, Math.floor((e.lon + 180) / 360 * COLS))].push(e));
+    const cuenta = {}; eventos.forEach(e => cuenta[e.ico + ' ' + e.nom] = (cuenta[e.ico + ' ' + e.nom] || 0) + 1);
+    $('eventosEstado').textContent = `${eventos.length} eventos activos (últimos 30 días): ` + Object.entries(cuenta).map(([k, v]) => `${k}: ${v}`).join(' · ');
+  }catch(e){ $('eventosEstado').innerHTML = '<span class="aviso">No se pudieron traer los eventos.</span> El juego sigue sin ellos.'; }
+  dibujar();
+}
+
+// ---------- 7. NIVEL EXTRA DEL EIC (catálogo VEDA de earth.gov) ----------
+async function catalogoEIC(){
+  // Leemos el catálogo por páginas (el servidor entrega pocas colecciones a la vez)
+  let url = `${VEDA}/stac/collections`, todas = [], error = '';
+  try{
+    for (let pagina = 0; pagina < 15 && url; pagina++){
+      const r = await fetch(url);
+      if (!r.ok){ error = `el servidor respondió con el código ${r.status}`; break; }
+      const j = await r.json();
+      todas = todas.concat(j.collections || []);
+      const sig = (j.links || []).find(l => l.rel === 'next');
+      url = sig ? sig.href : null;
+    }
+  }catch(e){ error = 'el navegador no pudo conectarse (sin internet o conexión bloqueada)'; }
+  const mundiales = todas.filter(c => {
+    const b = c.extent && c.extent.spatial && c.extent.spatial.bbox && c.extent.spatial.bbox[0];
+    return b && (b[2] - b[0]) > 300;
+  });
+  // preferimos las que traen colores oficiales del tablero del EIC
+  const lista = (mundiales.filter(c => c.renders && c.renders.dashboard).length ? mundiales.filter(c => c.renders && c.renders.dashboard) : mundiales)
+    .sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id));
+  if (lista.length){
+    $('eicSel').innerHTML = lista.map(c => `<option value="${escapar(c.id)}"${c.id === 'no2-monthly' ? ' selected' : ''}>${escapar(c.title || c.id)}</option>`).join('');
+    $('eicEstado').textContent = `${lista.length} misiones mundiales del EIC disponibles.`;
+  } else {
+    $('eicEstado').innerHTML = `<span class="aviso">No se pudo leer el catálogo del EIC${error ? ': ' + escapar(error) : ''}.</span> Igual pueden probar la misión NO₂.`;
+  }
+}
+function paramsEIC(rd, colores){
+  const p = new URLSearchParams();
+  (rd.assets || ['cog_default']).forEach(a => p.append('assets', a));
+  (rd.bidx || []).forEach(b => p.append('bidx', b));
+  (rd.rescale || []).forEach(r => p.append('rescale', r.join(',')));
+  if (colores){ if (rd.colormap_name) p.set('colormap_name', rd.colormap_name); if (rd.color_formula) p.set('color_formula', rd.color_formula); }
+  return p.toString();
+}
+async function imagenEIC(cid, iid, q){
+  const base = `${VEDA}/raster/collections/${encodeURIComponent(cid)}/items/${encodeURIComponent(iid)}`;
+  try{ return await cargarImg(`${base}/bbox/-180,-90,180,90/${W}x${H}.png?${q}`); }
+  catch(e){ return await cargarImg(`${base}/preview.png?${q}&width=${W}&height=${H}`); }
+}
+async function nivelEIC(cid){
+  pausar(); detenerJuego();
+  document.querySelectorAll('.nivel').forEach(b => b.setAttribute('aria-pressed', false));
+  nivel = {num:'MISIÓN EIC', nombre:cid, modo:'gris', explica:'Datos del Earth Information Center de la NASA. Valor alto = nota aguda.',
+           barra:'linear-gradient(90deg,#000,#fff)', pregunta:'¿Dónde es MAYOR el valor?', palabra:'mayor valor', tipoLugar:'todos'};
+  await cargarNivel(async () => {
+    const rc = await fetch(`${VEDA}/stac/collections/${encodeURIComponent(cid)}`);
+    if (!rc.ok) throw new Error(`el EIC respondió con el código ${rc.status}`);
+    const col = await rc.json();
+    const rd = col.renders?.dashboard || {};
+    nivel.nombre = col.title || cid;
+    nivel.explica = `Datos del Earth Information Center: ${(col.description || '').slice(0, 200)}${(col.description || '').length > 200 ? '…' : ''} Valor alto = nota aguda.`;
+    let r = await fetch(`${VEDA}/stac/search?collections=${encodeURIComponent(cid)}&datetime=../${$('fecha').value}T23:59:59Z&sortby=-datetime&limit=1`);
+    let items = r.ok ? (await r.json()).features : [];
+    if (!items?.length) items = (await (await fetch(`${VEDA}/stac/collections/${encodeURIComponent(cid)}/items?limit=1`)).json()).features;
+    const it = items[0]; if (!it) throw new Error('sin imágenes');
+    const gris = await imagenEIC(cid, it.id, paramsEIC(rd, false));
+    let vista = null; try{ vista = await imagenEIC(cid, it.id, paramsEIC(rd, true)); }catch(e){}
+    const px = leerPixeles(gris);
+    return {img:gris, vista, px, rj:analizar(px, nivel), fecha:(it.properties.datetime || it.properties.start_datetime || '').slice(0, 10),
+            fuente:`Earth Information Center (catálogo VEDA), colección <code>${escapar(cid)}</code>`};
+  }, 'la misión EIC');
+}
+
+// ---------- 8. MINIJUEGO "¿DÓNDE SUENA?" ----------
+// El juego toca dos lugares (uno por cada oído) y el niño adivina cuál tiene el dato más alto.
+const LUGARES = [
+  {n:'Mar Caribe (Barranquilla)', lat:12.5, lon:-75, t:'mar'}, {n:'Océano Pacífico (Ecuador)', lat:0, lon:-120, t:'mar'},
+  {n:'Mar cerca de Groenlandia', lat:62, lon:-35, t:'mar'}, {n:'Océano Índico', lat:-10, lon:75, t:'mar'},
+  {n:'Mar cerca de la Antártida', lat:-58, lon:-40, t:'mar'}, {n:'Mar Mediterráneo', lat:35, lon:18, t:'mar'},
+  {n:'Océano Atlántico Norte', lat:45, lon:-35, t:'mar'}, {n:'Mar cerca de Japón', lat:30, lon:140, t:'mar'},
+  {n:'Selva del Amazonas', lat:-4, lon:-62, t:'tierra'}, {n:'Desierto del Sahara', lat:23, lon:10, t:'tierra'},
+  {n:'Ipiales (Nariño)', lat:0.83, lon:-77.6, t:'tierra'}, {n:'Selva del Congo', lat:0, lon:22, t:'tierra'},
+  {n:'Desierto de Australia', lat:-25, lon:132, t:'tierra'}, {n:'Bosques de Canadá', lat:55, lon:-100, t:'tierra'},
+  {n:'Desierto de Arabia', lat:22, lon:47, t:'tierra'}, {n:'Selva de Indonesia', lat:0, lon:113, t:'tierra'},
+  {n:'Barranquilla', lat:10.96, lon:-74.8, t:'tierra'}, {n:'Groenlandia', lat:72, lon:-40, t:'tierra'}
+];
+const juego = {activo:false, ronda:0, puntos:0, vidas:3, a:null, b:null, esperando:false};
+function lugaresValidos(){
+  return LUGARES.filter(l => nivel.tipoLugar === 'todos' || l.t === nivel.tipoLugar)
+    .map(l => ({...l, v: valorEn(l.lat, l.lon)})).filter(l => l.v !== null);
+}
+function iniciarJuego(){
+  iniciarAudio(); audio.resume();
+  if (!nivel || !pixeles){ $('resultado').textContent = ''; $('juegoZona').hidden = false; $('estadoJuego').textContent = 'Primero elige una misión en la pestaña Explorar (con internet, para usar datos reales).'; hablar('Primero elige una misión.'); return; }
+  if (lugaresValidos().length < 2){ $('juegoZona').hidden = false; $('estadoJuego').textContent = 'Esta misión no tiene suficientes lugares con datos hoy. Prueba otra misión u otra fecha.'; return; }
+  pausar();
+  Object.assign(juego, {activo:true, ronda:0, puntos:0, vidas:3});
+  $('juegoZona').hidden = false; $('btnRepetir').disabled = false;
+  nuevaRonda();
+}
+function detenerJuego(){ juego.activo = false; juego.esperando = false; if ($('juegoZona')) $('juegoZona').hidden = true; $('btnRepetir').disabled = true; dibujar(); }
+function nuevaRonda(){
+  const ls = lugaresValidos(); let a, b, intentos = 0;
+  do { a = ls[Math.floor(Math.random() * ls.length)]; b = ls[Math.floor(Math.random() * ls.length)]; intentos++; }
+  while ((a === b || Math.abs(a.v - b.v) < 0.12) && intentos < 200);
+  if (a === b || Math.abs(a.v - b.v) < 0.12){ $('resultado').textContent = 'Hoy los lugares suenan muy parecidos. Prueba otro nivel.'; return; }
+  juego.a = a; juego.b = b; juego.ronda++; juego.esperando = true;
+  $('estadoJuego').textContent = `RONDA ${juego.ronda}/5 · PUNTOS ${juego.puntos} · ${'♥'.repeat(juego.vidas)}${'♡'.repeat(3 - juego.vidas)}`;
+  $('pregunta').textContent = nivel.pregunta;
+  $('nomA').textContent = a.n; $('nomB').textContent = b.n; $('resultado').textContent = 'Escucha: primero el oído izquierdo, después el derecho.';
+  dibujar(); tocarPareja();
+}
+function tocarPareja(){
+  if (!juego.a) return;
+  const t = audio.currentTime + .1;
+  nota(frec(Math.round(juego.a.v * 14), 1), t, 1.4, .25, -0.9, 'triangle');
+  nota(frec(Math.round(juego.b.v * 14), 1), t + 1.6, 1.4, .25, 0.9, 'triangle');
+  if (narrador) setTimeout(() => hablar(`${nivel.pregunta} Izquierda: ${juego.a.n}. Derecha: ${juego.b.n}.`), 3300);
+}
+function responder(cual){
+  if (!juego.activo || !juego.esperando) return;
+  juego.esperando = false;
+  const elegido = cual === 'a' ? juego.a : juego.b, otro = cual === 'a' ? juego.b : juego.a, bien = elegido.v > otro.v;
+  const ganador = bien ? elegido : otro;
+  if (bien){ juego.puntos += 10; const t = audio.currentTime; [0, 2, 4].forEach((k, i) => nota(frec(10 + k, 1), t + i * .12, .4, .18, 0, 'square')); }
+  else { juego.vidas--; nota(110, audio.currentTime, .5, .2, 0, 'sawtooth'); }
+  const txt = `${bien ? '¡CORRECTO!' : '¡Casi!'} ${ganador.n} tiene ${nivel.palabra} (${Math.round(ganador.v * 100)}% contra ${Math.round((bien ? otro : elegido).v * 100)}%). Su nota sonó más aguda.`;
+  $('resultado').innerHTML = `<span class="${bien ? 'bien' : 'mal'}">${escapar(txt)}</span>`;
+  hablar(txt);
+  $('estadoJuego').textContent = `RONDA ${juego.ronda}/5 · PUNTOS ${juego.puntos} · ${'♥'.repeat(juego.vidas)}${'♡'.repeat(3 - juego.vidas)}`;
+  setTimeout(() => {
+    if (!juego.activo) return;
+    if (juego.vidas <= 0 || juego.ronda >= 5){
+      const medalla = juego.puntos >= 50 ? '🥇 ORO' : juego.puntos >= 30 ? '🥈 PLATA' : juego.puntos >= 10 ? '🥉 BRONCE' : '⭐ APRENDIZ';
+      const fin = `FIN DEL JUEGO · ${juego.puntos} puntos · Medalla ${medalla}. ¡Eres explorador o exploradora de la Tierra!`;
+      $('estadoJuego').textContent = fin; $('pregunta').textContent = '¿Otra vez? Presiona Empezar juego o la tecla J.';
+      $('resultado').textContent = ''; hablar(fin); juego.activo = false;
+    } else nuevaRonda();
+  }, 3200);
+}
+
+// ---------- 9. ACCESIBILIDAD: NARRADOR Y TECLADO ----------
+function lonTxt(c){ const l = Math.round(-180 + (c + .5) * 360 / COLS); return l < 0 ? `${-l}° oeste` : `${l}° este`; }
+function anunciar(c){
+  const ev = conEventos ? eventosCol[c] || [] : [];
+  if (ev.length){ $('narracion').textContent = `${lonTxt(c)}: ${ev.slice(0, 2).map(e => `${e.ico} ${e.nom} (${e.titulo})`).join(' · ')}`; if (narrador) hablar(`${ev[0].nom}. ${ev[0].titulo}`); }
+  else if (c % 8 === 0){ const col = rejilla.celdas[c]; $('narracion').textContent = col.cob > .04 ? `${lonTxt(c)}: valor ${col.v > .66 ? 'alto' : col.v > .33 ? 'medio' : 'bajo'} (${Math.round(col.v * 100)}%)` : `${lonTxt(c)}: sin datos (silencio)`; }
+}
+function hablar(t){
+  if (!narrador || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'es-ES'; speechSynthesis.speak(u);
+}
+function describir(){
+  if (!rejilla || !nivel){ $('narracion').textContent = 'Primero elige una misión.'; return; }
+  const cs = rejilla.celdas.map((c, i) => ({...c, i})).filter(c => c.cob > .04);
+  if (!cs.length) return;
+  const max = cs.reduce((a, b) => b.v > a.v ? b : a), min = cs.reduce((a, b) => b.v < a.v ? b : a);
+  const t = `${nivel.nombre} (${fechaUsada}). Hay datos en el ${Math.round(rejilla.cobertura * 100)}% del mapa. Lo más alto está cerca de ${lonTxt(max.i)} y lo más bajo cerca de ${lonTxt(min.i)}. Hay ${eventos.length} eventos naturales activos.`;
+  $('narracion').textContent = t; const n = narrador; narrador = true; hablar(t); narrador = n;
+}
+
+// ---------- DIBUJO ----------
+function dibujar(){
+  ctx.fillStyle = '#05031a'; ctx.fillRect(0, 0, W, H);
+  if (imgVista) ctx.drawImage(imgVista, 0, 0, W, H);
+  else if (rejilla) rejilla.celdas.forEach((c, i) => c.fr.forEach((f, k) => { ctx.fillStyle = `hsla(${240 - 240 * f.v},90%,55%,${f.cob})`; ctx.fillRect(i * W / COLS, k * H / FRANJAS, W / COLS + 1, H / FRANJAS + 1); }));
+  else { for (let i = 0; i < 120; i++){ ctx.fillStyle = i % 7 ? '#fff' : '#ffe14d'; ctx.fillRect((i * 97) % W, (i * 53) % H, 3, 3); }
+         for (let y = -6; y <= 6; y++) for (let x = -6; x <= 6; x++){ if (x * x + y * y > 36) continue; ctx.fillStyle = (x + y * 2 + 20) % 5 < 2 ? '#39ff5a' : '#36e6ff'; ctx.fillRect(354 + x * 12, 174 + y * 12, 12, 12); } }
+  if (jugando && audio){
+    while (pendientes.length > 1 && pendientes[1].t <= audio.currentTime) pendientes.shift();
+    if (pendientes.length && pendientes[0].t <= audio.currentTime) columnaVisible = pendientes[0].c;
+    const x = columnaVisible * W / COLS;
+    ctx.fillStyle = 'rgba(255,79,216,.35)'; ctx.fillRect(x, 0, W / COLS, H);
+    ctx.fillStyle = '#ff4fd8'; ctx.fillRect(x + W / COLS - 3, 0, 3, H);
+  }
+  if (conEventos && !juego.activo){ ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    eventos.forEach(e => ctx.fillText(e.ico, (e.lon + 180) / 360 * W, (90 - e.lat) / 180 * H)); }
+  if (juego.activo && juego.a){
+    [[juego.a, '#36e6ff', '1'], [juego.b, '#ffe14d', '2']].forEach(([l, c, t]) => {
+      const x = (l.lon + 180) / 360 * W, y = (90 - l.lat) / 180 * H;
+      ctx.fillStyle = '#000'; ctx.fillRect(x - 11, y - 11, 22, 22); ctx.fillStyle = c; ctx.fillRect(x - 8, y - 8, 16, 16);
+      ctx.fillStyle = '#000'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y + 1);
+    });
+  }
+}
+// barras de señal de la nave (se mueven con el sonido)
+const barras = []; for (let i = 0; i < 48; i++){ const s = document.createElement('span'); $('arco').appendChild(s); barras.push(s); }
+const frecs = new Uint8Array(32);
+function animar(){
+  if (analizador && audio && audio.state === 'running'){ analizador.getByteFrequencyData(frecs); barras.forEach((b, i) => b.style.height = (10 + frecs[Math.min(31, Math.floor(i / 1.5) + 1)] / 255 * 90) + '%'); }
+  else barras.forEach((b, i) => b.style.height = (12 + 6 * Math.sin(Date.now() / 600 + i / 2) + 6) + '%');
+  if (jugando) dibujar();
+  requestAnimationFrame(animar);
+}
+// pestañas: Explorar y Videojuego
+function abrirPestana(cual){
+  const juegoSel = cual === 'juego';
+  $('tab-explorar').setAttribute('aria-selected', !juegoSel); $('tab-juego').setAttribute('aria-selected', juegoSel);
+  $('tab-explorar').tabIndex = juegoSel ? -1 : 0; $('tab-juego').tabIndex = juegoSel ? 0 : -1;
+  $('panel-explorar').hidden = juegoSel; $('panel-juego').hidden = !juegoSel;
+  if (juegoSel) pausar(); else if (juego.activo) detenerJuego();
+}
+$('tab-explorar').onclick = () => abrirPestana('explorar');
+$('tab-juego').onclick = () => abrirPestana('juego');
+$('pestanas').addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); e.stopPropagation(); const j = $('tab-juego').getAttribute('aria-selected') === 'true'; abrirPestana(j ? 'explorar' : 'juego'); (j ? $('tab-explorar') : $('tab-juego')).focus(); }
+});
+
+// ---------- BOTONES Y TECLAS ----------
+NIVELES.forEach((n, i) => {
+  const b = document.createElement('button');
+  b.className = 'nivel'; b.style.setProperty('--c', n.color); b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-keyshortcuts', String(i + 1));
+  b.innerHTML = `<span class="num">${n.num}</span><span class="nom">${n.nombre}</span><span class="sub">${n.sub}</span>`;
+  b.onclick = () => elegirNivel(i);
+  $('niveles').appendChild(b);
+});
+$('jugar').onclick = () => jugando ? pausar() : jugar();
+$('volumen').oninput = e => { if (salida) salida.gain.value = e.target.value / 100; };
+$('fecha').onchange = () => { if (nivel && nivel.capas) elegirNivel(NIVELES.indexOf(nivel)); else if (nivel) nivelEIC($('eicSel').value); };
+$('eicCargar').onclick = () => nivelEIC($('eicSel').value);
+$('btnEventos').onclick = e => { conEventos = !conEventos; e.currentTarget.setAttribute('aria-pressed', conEventos); dibujar(); };
+$('btnNarrador').onclick = e => { narrador = !narrador; e.currentTarget.setAttribute('aria-pressed', narrador); if (narrador) hablar('Narrador activado'); else if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+$('btnDescribir').onclick = describir;
+$('btnJuego').onclick = iniciarJuego;
+$('btnRepetir').onclick = () => { if (juego.activo) tocarPareja(); };
+$('opA').onclick = () => responder('a'); $('opB').onclick = () => responder('b');
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (e.code === 'Space' && e.target.getAttribute('role') !== 'tab' && e.target.tagName !== 'BUTTON'){ e.preventDefault(); abrirPestana('explorar'); jugando ? pausar() : jugar(); }
+  else if (juego.activo && (k === '1' || k === '2')) responder(k === '1' ? 'a' : 'b');
+  else if (k >= '1' && k <= '4'){ abrirPestana('explorar'); elegirNivel(Number(k) - 1); }
+  else if (k === 'j'){ abrirPestana('juego'); iniciarJuego(); }
+  else if (k === 'r' && juego.activo) tocarPareja();
+  else if (k === 'd') describir();
+  else if (k === 'n') $('btnNarrador').click();
+});
+
+// ¡ARRANCAMOS!
+dibujar(); animar(); cargarEventos(); catalogoEIC();
+</script>
+</body>
+</html>
